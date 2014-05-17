@@ -2,6 +2,13 @@ HCI
 ===
 
 
+Wymagane biblioteki
+===
+
+* `bottle`
+* `cherrypy`
+
+
 Środowisko do pracy z płytką
 ===
 
@@ -42,3 +49,10 @@ Na potrzeby testowania `./agent.py` może komunikować się z innym procesem zam
 będzie wisieć do czasu wystartowania `agent.py`, ale poza tym nie ma problemów. Komunikacja odbywa się po nazwanym
 PIPE-ie. `fakedev.py` oczekuje na polecenia od użytkownika - na razie działa `quit` i `send <data>`, ale jak już
 będzie jakiś protokół komunikacji płytka-agent, to pewnie dopisze się wygodniejsze polecenia.
+
+
+Serwer HTTP
+===
+
+W momencie uruchamiania `./agent.py` startowany jest serwer HTTP nasłuchujący na porcie 8080. Na stronie
+<http://localhost:8080/static/> powinien zostać wyświetlony ostatni przesłany komunikat.
