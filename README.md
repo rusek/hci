@@ -9,6 +9,15 @@ Wymagane biblioteki
 * `cherrypy`
 
 
+Zakładanie bazy danych
+===
+
+
+Na potrzeby komunikacji z USOS-em utrzymywana jest prosta baza danych (w postaci pliku `db.json`). Aby utworzyć
+początkową bazę danych należy najpierw uzyskać klucz dostępu do API na stronie <https://usosapps.uw.edu.pl/developers/>.
+Następnie tworzymy plik `db.json` i wpisujemy do niego `{"consumer": ["<consumer key>", "<consumer secret>"]}`.
+
+
 Środowisko do pracy z płytką
 ===
 
@@ -56,3 +65,13 @@ Serwer HTTP
 
 W momencie uruchamiania `./agent.py` startowany jest serwer HTTP nasłuchujący na porcie 8080. Na stronie
 <http://localhost:8080/static/> powinien zostać wyświetlony ostatni przesłany komunikat.
+
+
+Rejestracja użytkowników
+===
+
+Aby przyznać aplikacji dostęp do konta USOS, należy uruchomić serwer HTTP i wejść na stronę
+<http://localhost:8080/register>. Po uzyskaniu zgody powinna zostać wyświetlona strona z podsumowaniem zawierająca
+wszystkie karty przypisane do użytkownika (uwaga: próba odświeżenia strony kończy się błędem, aby ponownie pobrać
+dane z USOS-a trzeba przejść do <http://localhost:8080/register>). Odczytane informacje o kartach są zapisywane w
+pliku `db.json`, więc procedury nie trzeba powtarzać po każdym restarcie serwera.

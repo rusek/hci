@@ -1,2 +1,3 @@
 .fakedev
 *.pyc
+db.json
