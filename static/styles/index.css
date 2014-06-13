@@ -1,0 +1,90 @@
+@import url(http://fonts.googleapis.com/css?family=Fira+Sans:400,500,700&subset=latin,latin-ext);
+
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.viewport {
+    background: url(bg.jpg);
+    width: 1920px;
+    height: 1080px;
+    transform-origin: 0 0;
+    position: absolute;
+    font-family: 'Fira Sans', sans-serif;
+    font-weight: 500;
+    color: #2e3436;
+}
+
+p {
+    margin: 0;
+    padding: 0;
+}
+
+.time-table .day {
+    text-align: center;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.time-table .day .name {
+    padding-top: 10px;
+    font-size: 30px;
+}
+
+.time-table .day .numeric {
+    font-size: 22px;
+}
+
+.time-table .hour {
+    text-align: right;
+    font-size: 22px;
+}
+
+.time-table .horizontal-line {
+    background: gray;
+}
+
+.time-table .activity {
+    background: #ccc;
+    font-size: 22px;
+}
+
+.time-table .activity .name {
+}
+
+.time-table .activity .room {
+    margin-top: 20px;
+}
+
+.time-table .building-name {
+    font-size: 16px;
+}
+
+.title-panel {
+    text-align: center;
+}
+
+.title-panel .title {
+    font-size: 120px;
+    margin: 0;
+    padding: 350px 0 50px;
+}
+
+.dot {
+    color: #cc0000;
+}
+
+.title-panel .note {
+    font-size: 45px;
+    color: #555753;
+    margin: 0 20%;
+    padding: 0;
+}
+
+.title-panel .note em {
+    font-style: normal;
+    color: #2e3436;
+}

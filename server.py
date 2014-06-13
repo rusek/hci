@@ -5,6 +5,8 @@ import os
 import urlparse
 from bottle import Bottle, request, response, template, redirect, static_file, run
 
+from state import ExclusiveError
+
 STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 
 app = Bottle()
@@ -25,7 +27,11 @@ def iter_panels():
                 panel_index, panel_data = state.panel
                 if panel_index != prev_panel_index:
                     break
-                state.wait_panel()
+
+                try:
+                    state.wait_panel_exclusive()
+                except ExclusiveError:
+                    return
 
         yield panel_data
         prev_panel_index = panel_index
