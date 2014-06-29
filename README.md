@@ -75,3 +75,71 @@ Aby przyznać aplikacji dostęp do konta USOS, należy uruchomić serwer HTTP i 
 wszystkie karty przypisane do użytkownika (uwaga: próba odświeżenia strony kończy się błędem, aby ponownie pobrać
 dane z USOS-a trzeba przejść do <http://localhost:8080/register>). Odczytane informacje o kartach są zapisywane w
 pliku `db.json`, więc procedury nie trzeba powtarzać po każdym restarcie serwera.
+
+
+Komunikacja po kablu Ethernet
+===
+
+Jeśli chcemy spiąć płytkę z komputerem po porcie `eth0` i dać płytce dostęp do Internetu za pośrednictwem Wi-Fi
+(interfejs `wlan0`), musimy wykonać kilka kroków. Po ich wykonaniu lokalna karta sieciowa dostanie adres IP
+192.168.66.1, zaś płytka 192.168.66.2.
+
+Najpierw przypisujemy portowi `eth0` statyczny adres IP, `vim /etc/network/interfaces`:
+
+    iface eth0 inet static
+    address 192.168.66.1
+    network 192.168.66.0
+    netmask 255.255.255.0
+
+Zmiana wymaga restartu lub dodatkowo wykonania `ifconfig eth0 192.168.66.1 netmask 255.255.255.0 up`. Przyjazne użytkownikowi
+dystrybucje, jak Ubuntu, mogą chyba niechętnie reagować na przekonfigurowywanie bokiem interfejsów sieciowych,
+więc trzeba uważać.
+
+Teraz instalujemy serwer DHCP `apt-get install isc-dhcp-server` i modyfikujemy `/etc/default/isc-dhcp-server`:
+
+    INTERFACES="eth0"
+
+Następnie ustawiamy konfigurację serwera DHCP (`/etc/dhcp/dhcpd.conf`, używam OpenDNS):
+
+    ddns-update-style none;
+
+    option domain-name-servers 208.67.222.222, 208.67.220.220;
+
+    default-lease-time 86400;
+    max-lease-time 604800;
+
+    authoritative;
+
+    subnet 192.168.66.0 netmask 255.255.255.0 {
+        range 192.168.66.2 192.168.66.128;
+        option subnet-mask 255.255.255.0;
+        option broadcast-address 192.168.66.255;
+        option routers 192.168.66.1;
+    }
+
+    host galileo {
+        hardware ethernet 98:4f:ee:00:32:0d;
+        fixed-address 192.168.66.2;
+    }
+    
+Potem już tylko restartujemy serwer `/etc/init.d/isc-dhcp-server restart` i sprawdzamy, czy nie poleciały żadne błędy
+oglądając `grep dhcpd /var/log/syslog*`. W logach powinny również pojawić się komunikaty w momencie podpięcia płytki
+do komputera. m.in. przyznany adres IP. Uwaga: serwer DHCP nie wystartuje poprawnie, jeśli karta sieciowa nie będzie
+poprawnie skonfigurowana.
+
+Musimy jeszcze ustawić NAT (wyniki tych poleceń raczej nie przeżyją restartu, można to chyba jakoś poprawiać ustawiając
+w `/etc/network/interfaces` dodatkowo `up route add ...`):
+
+    echo "1" > /proc/sys/net/ipv4/ip_forward
+    iptables --table nat --append POSTROUTING --out-interface wlan0 -j MASQUERADE
+
+
+Ustawianie zegara
+===
+
+Będąc podpiętym do płytki po kablu Ethernet wykonujemy komendę (zakładam, że płytka ma adres IP 192.168.66.2):
+
+    ssh root@192.168.66.2 "date --utc --set \"`date --utc +"%Y-%m-%d %H:%M:%S"`\""
+
+Nie jest to dokładna metoda, ale wystarcza, by móc komunikować się z USOSapi i do poprawnej weryfikacji ważności
+certyfikatów.

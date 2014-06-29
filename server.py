@@ -128,4 +128,4 @@ def run_server(state):
     global app_state
 
     app_state = state
-    run(app, host='localhost', port=8080, server='cherrypy')
+    run(app, host='0.0.0.0', port=8080, server='cherrypy')
