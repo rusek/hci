@@ -62,6 +62,11 @@ class DeviceThread(threading.Thread):
             start=start,
         )
 
+    def _build_crstests_panel(self, client):
+        return dict(
+            text=u'Tutaj będą oceny ze sprawdzianów'
+        )
+
     def _build_panel(self, line):
         line = line.strip()
 
@@ -73,6 +78,15 @@ class DeviceThread(threading.Thread):
             except KeyError:
                 return dict(type='bad_card')
             return self._build_tt_panel(client)
+
+        match = re.match('^crstests ([0-9a-fA-F]{8})$', line)
+        if match:
+            try:
+                with self.state as state:
+                    client = state.make_client_by_card(match.group(1))
+            except KeyError:
+                return dict(type='bad_card')
+            return self._build_crstests_panel(client)
 
         if line == 'greeting':
             return START_PANEL_DATA
