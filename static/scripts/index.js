@@ -144,7 +144,7 @@ function createTTPanel(start, activities) {
 
     function renderActivities(dayShift) {
         var date = addDays(start, dayShift);
-        var dateString = zeroPad(date.getDay(), 2) + "-" + zeroPad(date.getMonth(), 2) + "-" + date.getFullYear();
+        var dateString = zeroPad(date.getDate(), 2) + "-" + zeroPad(date.getMonth() + 1, 2) + "-" + date.getFullYear();
 
         node.append(
             $("<div class='day'></div>").css({
