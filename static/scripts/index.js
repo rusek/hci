@@ -191,6 +191,119 @@ function createTTPanel(start, activities) {
     return node;
 }
 
+
+function createCrstestsPanel(tests) {
+    var node = $("<div class='course-tests'></div>");
+
+    var minX = 50, maxX = VIEWPORT_WIDTH - 50;
+    var colSep = 50;
+    var numCols = 3;
+    var colWidth = Math.round((maxX - minX - (numCols - 1) * colSep) / numCols);
+    maxX = minX + numCols * (colWidth + colSep) - colSep; // due to rounding errors
+
+    function renderTest(test) {
+        function renderNode(node) {
+            var li = $("<li></li>");
+            var label = $("<p class='node-label'></p>");
+            label.append($("<span class='node-name'></span>").text(node.name.pl));
+            function setSentinelValue(text) {
+                label.append($("<span class='node-value sentinel'></span>").text(text));
+            }
+
+            if (node.type === "task") {
+                if (!node.visible_for_students) {
+                    setSentinelValue('(punkty ukryte)');
+                } else if (!node.user_points || typeof node.user_points.points !== "number") {
+                    setSentinelValue('(brak punktów)');
+                } else {
+                    label.append(
+                        $("<span class='node-value'></span>").text(
+                            String(node.user_points.points).replace(/\./, ",")
+                        ).append(
+                            "&nbsp;"
+                        ).append(
+                            $("<span class='node-unit'>pkt</span>")
+                        )
+                    );
+                }
+            }
+
+            if (node.type === "grade") {
+                if (!node.visible_for_students) {
+                    setSentinelValue('(ocena ukryta)');
+                } else if (!node.user_grade || !node.user_grade.grade) {
+                    setSentinelValue('(brak oceny)');
+                } else {
+                    label.append(
+                        $("<span class='node-value'></span>").text(
+                            node.user_grade.grade.symbol
+                        ).append(
+                            "&nbsp;"
+                        ).append(
+                            $("<span class='node-unit' style='visibility: hidden'>pkt</span>")
+                        )
+                    );
+                }
+            }
+
+            li.append(label);
+            if (node.subnodes.length) {
+                var ul = $("<ul></ul>");
+                node.subnodes.forEach(function(subnode) {
+                    ul.append(renderNode(subnode));
+                });
+                li.append(ul);
+            }
+            return li;
+        }
+
+        var testNode = $("<div class='test'></div>");
+        testNode.append(
+            $("<p></p>").text(
+                test.course_edition.course_name.pl
+            ).append(
+                $("<span class='dot'>.</span>")
+            )
+        );
+        var ulNode = $("<ul></ul>");
+        test.subnodes.forEach(function(subnode) {
+            ulNode.append(renderNode(subnode));
+        });
+        testNode.append(ulNode);
+        return testNode;
+    }
+
+    /*function countUsedColumns(testNode) {
+        var markerNode = $("<li></li>").css({
+        });
+        markerNode.appendTo(testNode.children("ul"));
+        testNode.appendTo("body");
+
+        console.log(markerNode.position());
+
+        //markerNode.detach();
+        testNode.detach();
+    }*/
+
+    tests.forEach(function(test, i) {
+        if (i >= numCols) {
+            return;
+        }
+        var testNode = renderTest(test);
+        testNode.css({
+            position: "absolute",
+            width: colWidth + "px",
+            height: VIEWPORT_HEIGHT + "px",
+            top: "0",
+            left: (minX + i * (colWidth + colSep)) + "px"
+        });
+
+        node.append(testNode);
+    });
+
+    return node;
+}
+
 function createPanelFromData(data) {
     switch (data.type) {
     case "greeting":
@@ -199,6 +312,9 @@ function createPanelFromData(data) {
 
     case "tt":
         return createTTPanel(data.start, data.activities);
+
+    case "crstests":
+        return createCrstestsPanel(data.tests);
 
     case "loading":
         return createTitlePanel("Czekaj", "Pobieram dane.");

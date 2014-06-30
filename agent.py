@@ -13,11 +13,35 @@ from dev import open_device
 from server import run_server
 
 
+class Cache(object):
+    def __init__(self):
+        self._timeout = datetime.timedelta(minutes=15)
+        self._entries = dict()
+
+    def __getitem__(self, key):
+        ts, value = self._entries[key]
+        ts_now = datetime.datetime.utcnow()
+        if ts + self._timeout < ts_now:
+            del self._entries[key]
+            raise KeyError('Timed out')
+        return value
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __setitem__(self, key, value):
+        self._entries[key] = datetime.datetime.utcnow(), value
+
+
 class DeviceThread(threading.Thread):
     def __init__(self, state, fake=False):
         super(DeviceThread, self).__init__()
         self.state = state
         self._fake = fake
+        self._cache = Cache()
         self.daemon = True
 
     def run(self):
@@ -62,10 +86,84 @@ class DeviceThread(threading.Thread):
             start=start,
         )
 
-    def _build_crstests_panel(self, client):
-        return dict(
-            text=u'Tutaj będą oceny ze sprawdzianów'
+    def _select_current_crstests(self, participant_crstests):
+        terms = participant_crstests['terms'].values()
+        if not terms:
+            return []
+        terms.sort(key=lambda term: term['order_key'], reverse=True)
+        # KR: my grade
+        # return participant_crstests['tests']['2012L'].values()
+        return participant_crstests['tests'][terms[0]['id']].values()
+
+    def _load_crstest_tree(self, client, test):
+        response = client.services.crstests.node(
+            node_id=test['root_id'],
+            recursive=True,
+            fields='node_id|name|type|subnodes|visible_for_students',
         )
+        test['subnodes'] = response['subnodes']
+
+        self._load_crstest_grades(client, test)
+        self._load_crstest_points(client, test)
+
+    def _load_crstest_grades(self, client, test):
+        grade_nodes = {}
+
+        def visit(node):
+            if node['type'] == 'oc':
+                node['type'] = 'grade'
+            if node['type'] == 'grade':
+                grade_nodes[node['node_id']] = node
+            for subnode in node['subnodes']:
+                visit(subnode)
+
+        visit(test)
+        if not grade_nodes:
+            return
+
+        response = client.services.crstests.user_grades(
+            node_ids='|'.join(map(str, grade_nodes.iterkeys())),
+        )
+        for user_grade in response:
+            grade_nodes[user_grade['node_id']]['user_grade'] = user_grade
+
+    def _load_crstest_points(self, client, test):
+        task_nodes = {}
+
+        def visit(node):
+            if node['type'] == 'pkt':
+                node['type'] = 'task'
+            if node['type'] == 'task':
+                task_nodes[node['node_id']] = node
+            for subnode in node['subnodes']:
+                visit(subnode)
+
+        visit(test)
+        if not task_nodes:
+            return
+
+        response = client.services.crstests.user_points(
+            node_ids='|'.join(map(str, task_nodes.iterkeys())),
+        )
+        for user_grade in response:
+            task_nodes[user_grade['node_id']]['user_points'] = user_grade
+
+    def _build_crstests_panel(self, client):
+        cache_key = 'crstests', client.token
+        panel = self._cache.get(cache_key)
+        if panel is None:
+            response = client.services.crstests.participant()
+            tests = self._select_current_crstests(response)
+            for test in tests:
+                self._load_crstest_tree(client, test)
+            panel = dict(
+                type='crstests',
+                tests=tests
+            )
+
+            self._cache[cache_key] = panel
+
+        return panel
 
     def _build_panel(self, line):
         line = line.strip()

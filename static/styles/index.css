@@ -23,6 +23,54 @@ p {
     padding: 0;
 }
 
+.course-tests .test {
+    /*-webkit-column-count: 3;
+    -moz-column-count: 3;
+    column-count: 3;
+
+    -webkit-column-gap: 50px;
+    -moz-column-gap: 50px;
+    column-gap: 50px;
+
+    -moz-column-fill: auto;*/
+    overflow: hidden;
+}
+
+.course-tests ul {
+    list-style-type: square;
+}
+
+.course-tests .node-name {
+    line-height: 35px;
+}
+
+.course-tests .node-value {
+    float: right;
+    line-height: 35px;
+}
+
+.course-tests .node-unit {
+    font-size: 16px;
+}
+
+.course-tests .node-label, .course-tests ul {
+    clear: both;
+}
+
+.course-tests .node-value.sentinel {
+    font-size: 16px;
+}
+
+.course-tests .test > p {
+    font-size: 30px;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.course-tests .test > ul {
+    font-size: 22px;
+}
+
 .time-table .day {
     text-align: center;
     display: table-cell;
