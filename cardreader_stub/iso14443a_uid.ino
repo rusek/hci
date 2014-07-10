@@ -27,17 +27,22 @@
 #include <Wire.h>
 #include <Adafruit_NFCShield_I2C.h>
 
+
 #define IRQ   (2)
 #define RESET (3)  // Not connected by default on the NFC Shield
 
 Adafruit_NFCShield_I2C nfc(IRQ, RESET);
 
-int pushButton = 8;
-int pushState = 1;
+int pushButton[3] = {8, 9, 10};
+int pushState[3] = {1, 1, 1};
+char *file_name = "/home/root/hci/data.log";
+FILE *dataFile;
 
 void setup(void) {
   Serial.begin(115200);
-  //Serial.println("Hello!");
+  Serial.println("begin");
+  
+  dataFile = fopen(file_name, "w");
 
   nfc.begin();
 
@@ -47,21 +52,28 @@ void setup(void) {
     while (1); // halt
   }
  
-  // Got ok data, print it out!
-  //Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
-  //Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
-  //Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
   
-  // Set the max number of retry attempts to read from a card
-  // This prevents us from waiting forever for a card, which is
-  // the default behaviour of the PN532.
   nfc.setPassiveActivationRetries(1);
   
-  // configure board to read RFID tags
   nfc.SAMConfig();
   
-  pinMode(pushButton, INPUT);  
-  //Serial.println("Waiting for an ISO14443A card");
+  Serial.println("pin");
+  
+  pinMode(pushButton[0], INPUT);
+  pinMode(pushButton[1], INPUT);
+  pinMode(pushButton[2], INPUT);
+  Serial.println("ok");
+}
+
+void check_button(int i){
+  int buttonState = digitalRead(pushButton[i]);
+  //Serial.println(buttonState);
+  if(buttonState == 0 && pushState[i] == 1){
+    fprintf(dataFile, "button%d\r\n", i);
+    fflush(dataFile);
+    Serial.println(i);
+  }
+  pushState[i] = buttonState;
 }
 
 void loop(void) {
@@ -69,26 +81,21 @@ void loop(void) {
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
   
-  // Wait for an ISO14443A type cards (Mifare, etc.).  When one is found
-  // 'uid' will be populated with the UID, and uidLength will indicate
-  // if the uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight)
-  int buttonState = digitalRead(pushButton);
-  if(buttonState == 0 && pushState == 1)
-    Serial.println("clicked");
-  pushState = buttonState;
+  check_button(0);
+  check_button(1);
+  check_button(2);
   
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength);
   
+  //frpintf(dataFile, "greeting");
   if (success) {
-    //Serial.println("Found a card!");
-    //Serial.print("UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-    //Serial.print("UID Value: ");
     for (uint8_t i=0; i < uidLength; i++) 
     {
-      Serial.print(uid[i], HEX); 
+      fprintf(dataFile, "%02x", uid[i] & 0xff); 
     }
-    Serial.println("");
-    // Wait 1 second before continuing
+    fprintf(dataFile, "\r\n");
+    fflush(dataFile);
+    Serial.println("card");
     delay(1000);
   }
   else
